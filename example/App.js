@@ -32,7 +32,7 @@ class PaperExample extends React.Component<{}, State> {
   };
 
   componentDidMount() {
-    StatusBar.setBarStyle('light-content');
+    StatusBar.setBarStyle('dark-content');
   }
 
   _toggleTheme = () =>
