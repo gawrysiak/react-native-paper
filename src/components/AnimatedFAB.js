@@ -90,6 +90,7 @@ class AnimatedFABExample extends React.Component<Props, State> {
 
     const fabRotate = this.state.animatedValue.interpolate({
       inputRange: [0, 1],
+      // $FlowFixMe
       outputRange: ['0deg', '135deg'],
     });
 
