@@ -10,14 +10,24 @@ import {
   StatusBar,
   Platform,
 } from 'react-native';
+import Paragraph from './Typography/Paragraph';
+import Paper from './Paper';
+import TouchableRipple from './TouchableRipple';
+
 import withTheme from '../core/withTheme';
 import type { Theme } from '../types';
 
 import FAB from './FAB';
 
 type Props = {
-  items: [{ icon: string }],
+  items: Array<Item>,
   theme: Theme,
+};
+
+type Item = {
+  icon: string,
+  label?: string,
+  onPress: () => void,
 };
 
 type State = {
@@ -68,14 +78,14 @@ class AnimatedFABExample extends React.Component<Props, State> {
     } else {
       Animated.timing(this.state.animatedValue, {
         toValue,
-        duration: 100,
+        duration: 200,
         useNativeDriver: true,
       }).start();
       Animated.parallel(
         this.state.fabs.map(animation =>
           Animated.timing(animation, {
             toValue,
-            duration: 100,
+            duration: 200,
             useNativeDriver: true,
           })
         )
@@ -87,6 +97,7 @@ class AnimatedFABExample extends React.Component<Props, State> {
 
   render() {
     const { colors } = this.props.theme;
+    const { items } = this.props;
 
     const fabRotate = this.state.animatedValue.interpolate({
       inputRange: [0, 1],
@@ -136,6 +147,7 @@ class AnimatedFABExample extends React.Component<Props, State> {
                         },
                       ],
                       opacity: opacity,
+                      paddingBottom: 16,
                     };
                     return (
                       <Animated.View
@@ -146,15 +158,37 @@ class AnimatedFABExample extends React.Component<Props, State> {
                           fabStyleTranslate,
                         ]}
                       >
-                        <FAB
-                          dark
-                          icon={this.props.items[i].icon}
-                          small
+                        <View
                           style={[
-                            styles.fab,
-                            { backgroundColor: colors.primary },
+                            styles.itemContainer,
+                            items[i].label ? { right: 23 } : { right: 0 },
                           ]}
-                        />
+                        >
+                          {items[i].label && (
+                            <TouchableRipple onPress={items[i].onPress}>
+                              <View>
+                                <Paper style={styles.label}>
+                                  <Paragraph style={styles.text}>
+                                    {items[i].label}
+                                  </Paragraph>
+                                </Paper>
+                              </View>
+                            </TouchableRipple>
+                          )}
+                          <FAB
+                            dark
+                            icon={items[i].icon}
+                            small
+                            style={[
+                              styles.fab,
+                              {
+                                backgroundColor: colors.primary,
+                                marginLeft: items[i].label ? 30 : 0,
+                              },
+                            ]}
+                            onPress={this.props.items[i].onPress}
+                          />
+                        </View>
                       </Animated.View>
                     );
                   })}
@@ -204,6 +238,20 @@ const styles = StyleSheet.create({
   },
   fab: {
     elevation: 7,
+  },
+  label: {
+    borderRadius: 5,
+    elevation: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  itemContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  text: {
+    width: '100%',
   },
 });
 

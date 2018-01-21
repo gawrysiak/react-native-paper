@@ -13,7 +13,12 @@ type State = {
   loading: boolean,
 };
 
-const items = [{ icon: 'airplay' }, { icon: 'settings' }];
+const items = [
+  { icon: 'add', onPress: () => {} },
+  { icon: 'today', label: 'Calendar', onPress: () => {} },
+  { icon: 'email', label: 'Email', onPress: () => {} },
+  { icon: 'star', onPress: () => {} },
+];
 class AnimatedFABExample extends React.Component<Props, State> {
   static title = 'Animated';
 
@@ -30,7 +35,7 @@ class AnimatedFABExample extends React.Component<Props, State> {
           <Button primary>Primary</Button>
           <Button>Custom</Button>
         </View>
-        <AnimatedFAB icon="add" onPress={() => {}} items={items} />
+        <AnimatedFAB icon="add" items={items} />
       </View>
     );
   }
