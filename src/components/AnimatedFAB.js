@@ -5,14 +5,14 @@ import {
   View,
   StyleSheet,
   Animated,
-  Modal,
+  Easing,
   TouchableWithoutFeedback,
   StatusBar,
   Platform,
 } from 'react-native';
-import Paragraph from './Typography/Paragraph';
-import Paper from './Paper';
-import TouchableRipple from './TouchableRipple';
+import Text from './Typography/Text';
+import Card from './Card/Card';
+import ThemedPortal from './Portal/ThemedPortal';
 
 import withTheme from '../core/withTheme';
 import type { Theme } from '../types';
@@ -32,7 +32,6 @@ type Item = {
 
 type State = {
   animatedValue: Animated.Value,
-  fabs: Animated.Value[],
   isOpen: boolean,
 };
 
@@ -42,7 +41,6 @@ class AnimatedFABExample extends React.Component<Props, State> {
 
     this.state = {
       animatedValue: new Animated.Value(0),
-      fabs: new Array(props.items.length).fill(new Animated.Value(0)),
       isOpen: false,
     };
   }
@@ -53,205 +51,180 @@ class AnimatedFABExample extends React.Component<Props, State> {
       : StatusBar.setBarStyle('light-content');
   }
 
-  toggleModal = () => {
-    const toValue = this.state.isOpen ? 0 : 1;
-    if (!this.state.isOpen) {
-      this.setState(
-        () => ({
-          isOpen: !this.state.isOpen,
-        }),
-        () => {
-          Animated.timing(this.state.animatedValue, {
-            toValue,
-            duration: 100,
-            useNativeDriver: true,
-          }).start();
-          this.state.fabs.map(animation =>
-            Animated.timing(animation, {
-              toValue,
-              duration: 100,
-              useNativeDriver: true,
-            }).start()
-          );
-        }
-      );
-    } else {
+  _handleOpen = () =>
+    this.setState({ isOpen: true }, () => {
       Animated.timing(this.state.animatedValue, {
-        toValue,
-        duration: 200,
+        toValue: 1,
+        duration: 300,
+        easing: Easing.sin,
         useNativeDriver: true,
       }).start();
-      Animated.parallel(
-        this.state.fabs.map(animation =>
-          Animated.timing(animation, {
-            toValue,
-            duration: 200,
-            useNativeDriver: true,
-          })
-        )
-      ).start(() => {
-        this.setState({ isOpen: !this.state.isOpen });
-      });
+    });
+
+  _handleDismiss = () =>
+    this.setState({ isOpen: false }, () => {
+      Animated.timing(this.state.animatedValue, {
+        toValue: 0,
+        duration: 200,
+        easing: Easing.sin,
+        useNativeDriver: true,
+      }).start();
+    });
+
+  toggleModal = () => {
+    if (this.state.isOpen) {
+      this._handleDismiss();
+    } else {
+      this._handleOpen();
     }
   };
 
   render() {
-    const { colors } = this.props.theme;
+    const { colors, fonts } = this.props.theme;
     const { items } = this.props;
 
-    const fabRotate = this.state.animatedValue.interpolate({
-      inputRange: [0, 1],
-      // $FlowFixMe
-      outputRange: ['0deg', '135deg'],
-    });
+    const buttonRotate = this.state.animatedValue.interpolate(
+      this.state.isOpen
+        ? {
+            inputRange: [0, 0.5, 1],
+            // $FlowFixMe
+            outputRange: ['0deg', '135deg', '135deg'],
+          }
+        : {
+            inputRange: [0, 1],
+            // $FlowFixMe
+            outputRange: ['0deg', '135deg'],
+          }
+    );
 
-    const fabStyle = {
-      transform: [
-        {
-          rotate: fabRotate,
-        },
-      ],
-      height: 88,
-      width: 88,
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-    };
+    const backdropOpacity = this.state.isOpen
+      ? this.state.animatedValue.interpolate({
+          inputRange: [0, 0.5, 1],
+          // $FlowFixMe
+          outputRange: [0, 1, 1],
+        })
+      : this.state.animatedValue;
+
+    const length = items.length + 1;
+    const inputRange = Array.from({ length }).map(
+      (_, i) => i * (1 / (length - 1))
+    );
+
+    const opacities = items.map(
+      (_, index, self) =>
+        this.state.isOpen
+          ? this.state.animatedValue.interpolate({
+              inputRange,
+              outputRange: inputRange.map(
+                (_, i) => (i < self.length - index ? 0 : 1)
+              ),
+            })
+          : this.state.animatedValue
+    );
+
+    const scales = opacities.map(opacity =>
+      opacity.interpolate({
+        inputRange: [0, 1],
+        // $FlowFixMe
+        outputRange: [0.8, 1],
+      })
+    );
 
     return (
-      <Animated.View style={styles.positionAbsolute}>
-        <View>
-          <Modal
-            visible={this.state.isOpen}
-            transparent
-            onRequestClose={this.toggleModal}
-          >
-            <TouchableWithoutFeedback onPress={this.toggleModal}>
-              <View style={[StyleSheet.absoluteFill, styles.layout]}>
-                <View style={styles.positionAbsolute}>
-                  {this.state.fabs.map((animation, i) => {
-                    const move = animation.interpolate({
-                      inputRange: [0, 1],
-                      // $FlowFixMe
-                      outputRange: [0, `${i + 1}` * -70],
-                    });
-
-                    const opacity = animation.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, 1],
-                    });
-                    const fabStyleTranslate = {
-                      transform: [
-                        {
-                          translateY: move,
-                        },
-                      ],
-                      opacity: opacity,
-                      paddingBottom: 16,
-                    };
-                    return (
-                      <Animated.View
-                        key={i}
-                        style={[
-                          styles.positionAbsolute,
-                          styles.overflow,
-                          fabStyleTranslate,
-                        ]}
-                      >
-                        <View
-                          style={[
-                            styles.itemContainer,
-                            items[i].label ? { right: 23 } : { right: 0 },
-                          ]}
-                        >
-                          {items[i].label && (
-                            <TouchableRipple onPress={items[i].onPress}>
-                              <View>
-                                <Paper style={styles.label}>
-                                  <Paragraph style={styles.text}>
-                                    {items[i].label}
-                                  </Paragraph>
-                                </Paper>
-                              </View>
-                            </TouchableRipple>
-                          )}
-                          <FAB
-                            dark
-                            icon={items[i].icon}
-                            small
-                            style={[
-                              styles.fab,
-                              {
-                                backgroundColor: colors.primary,
-                                marginLeft: items[i].label ? 30 : 0,
-                              },
-                            ]}
-                            onPress={this.props.items[i].onPress}
-                          />
-                        </View>
-                      </Animated.View>
-                    );
-                  })}
-                </View>
-                <Animated.View
-                  style={[styles.positionAbsolute, styles.overflow, fabStyle]}
-                >
-                  <FAB
-                    dark
-                    onPress={this.toggleModal}
-                    icon="add"
-                    style={styles.fab}
-                  />
-                </Animated.View>
-              </View>
-            </TouchableWithoutFeedback>
-          </Modal>
-          <Animated.View style={styles.overflow}>
-            <FAB
-              dark
-              onPress={this.toggleModal}
-              icon="add"
-              style={styles.fab}
+      <ThemedPortal>
+        <View pointerEvents="box-none" style={styles.container}>
+          <TouchableWithoutFeedback onPress={this._handleDismiss}>
+            <Animated.View
+              pointerEvents={this.state.isOpen ? 'auto' : 'none'}
+              style={[styles.backdrop, { opacity: backdropOpacity }]}
             />
-          </Animated.View>
+          </TouchableWithoutFeedback>
+          <View pointerEvents={this.state.isOpen ? 'auto' : 'none'}>
+            {items.map((it, i) => {
+              return (
+                <Animated.View
+                  key={i}
+                  style={[
+                    {
+                      opacity: opacities[i],
+                    },
+                  ]}
+                  pointerEvents="box-none"
+                >
+                  <View style={[styles.item]}>
+                    {it.label && (
+                      <Card
+                        style={[
+                          styles.label,
+                          {
+                            transform: [{ scale: scales[i] }],
+                          },
+                        ]}
+                        onPress={it.onPress}
+                      >
+                        <Text style={{ fontFamily: fonts.medium }}>
+                          {it.label}
+                        </Text>
+                      </Card>
+                    )}
+                    <FAB
+                      dark
+                      icon={it.icon}
+                      small
+                      style={[
+                        {
+                          backgroundColor: colors.primary,
+                          transform: [{ scale: scales[i] }],
+                        },
+                      ]}
+                      onPress={it.onPress}
+                    />
+                  </View>
+                </Animated.View>
+              );
+            })}
+          </View>
+          <FAB
+            dark
+            onPress={this.toggleModal}
+            icon="add"
+            style={[styles.fab, { transform: [{ rotate: buttonRotate }] }]}
+          />
         </View>
-      </Animated.View>
+      </ThemedPortal>
     );
   }
 }
 
 const styles = StyleSheet.create({
-  positionAbsolute: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-  },
-  overflow: {
-    height: 88,
-    width: 88,
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  layout: {
-    backgroundColor: 'rgba(255, 255, 255, .9)',
+  container: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'flex-end',
+    justifyContent: 'flex-end',
   },
   fab: {
-    elevation: 7,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    marginTop: 8,
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, .9)',
   },
   label: {
     borderRadius: 5,
-    elevation: 3,
+    elevation: 2,
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 2,
+    marginVertical: 8,
+    marginHorizontal: 24,
   },
-  itemContainer: {
+  item: {
+    marginHorizontal: 24,
+    marginBottom: 16,
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',
-  },
-  text: {
-    width: '100%',
   },
 });
 

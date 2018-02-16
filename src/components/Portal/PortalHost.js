@@ -69,7 +69,11 @@ export default class Portals extends React.Component<Props, State> {
   render() {
     const { portals } = this.state;
     return (
-      <View {...this.props} style={[styles.container, this.props.style]}>
+      <View
+        pointerEvents="box-none"
+        {...this.props}
+        style={[styles.container, this.props.style]}
+      >
         {this.props.children}
         {portals
           .reduce((acc, curr) => {
@@ -92,7 +96,11 @@ export default class Portals extends React.Component<Props, State> {
             }
           }, [])
           .map(({ position, items }) => (
-            <View key={position} style={StyleSheet.absoluteFill}>
+            <View
+              key={position}
+              style={StyleSheet.absoluteFill}
+              pointerEvents="box-none"
+            >
               {items}
             </View>
           ))}

@@ -2,7 +2,7 @@
 
 import color from 'color';
 import * as React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Animated, StyleSheet, View } from 'react-native';
 import Paper from './Paper';
 import Icon from './Icon';
 import TouchableRipple from './TouchableRipple';
@@ -10,6 +10,8 @@ import { white } from '../styles/colors';
 import withTheme from '../core/withTheme';
 import type { Theme } from '../types';
 import type { IconSource } from './Icon';
+
+const AnimatedPaper = Animated.createAnimatedComponent(Paper);
 
 type Props = {
   /**
@@ -72,10 +74,10 @@ const FAB = (props: Props) => {
     .string();
 
   return (
-    <Paper
+    <AnimatedPaper
       {...props}
       style={[
-        { backgroundColor, elevation: 12 },
+        { backgroundColor, elevation: small ? 9 : 12 },
         styles.content,
         small ? styles.small : styles.standard,
         style,
@@ -91,7 +93,7 @@ const FAB = (props: Props) => {
           <Icon name={icon} size={24} style={{ color: textColor }} />
         </View>
       </TouchableRipple>
-    </Paper>
+    </AnimatedPaper>
   );
 };
 
